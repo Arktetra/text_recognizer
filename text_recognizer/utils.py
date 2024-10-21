@@ -1,0 +1,118 @@
+from pathlib import Path
+from typing import Union, Tuple, Any
+from tqdm import tqdm
+from urllib import request
+
+import cv2
+import hashlib
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+import torch
+
+def hasattrs(obj: Any, attrs: Tuple[str]) -> bool:
+    """Checks if an object obj has all attribute in attrs.
+
+    Args:
+        obj (Any): an object.
+        attrs (Tuple[str]): a tuple of attributes.
+
+    Returns:
+        bool: True if the condition holds, otherwise False.
+    """
+       
+    return all(hasattr(obj, attr) for attr in attrs)
+
+def read_image(image_uri: Union[Path, str], grayscale: bool = False) -> np.array:
+    
+    def read_image_from_filename(image_filename: Union[Path, str], imread_flag):
+        """Read an image from local file."""
+        
+        return cv2.imread(image_filename, imread_flag)
+    
+    def read_image_from_url(image_url: str, imread_flag):
+        """Read an image from url."""
+        
+        url_response = request.urlopen(str(image_url))
+        image_array = np.array(bytearray(url_response.read()), dtype = np.uint8)
+        return cv2.imdecode(image_array, imread_flag)
+    
+    imread_flag = cv2.IMREAD_GRAYSCALE if grayscale else cv2.IMREAD_COLOR
+    local_file = os.path.exists(image_uri)
+    
+    try:
+        img = None
+        if local_file:
+            img = read_image_from_filename(image_uri, imread_flag)
+        else:
+            img = read_image_from_url(image_uri, imread_flag)
+    except Exception as e:
+        raise ValueError("Could not load image at {}: {}".format(image_uri, e))
+    
+    return img
+
+def write_image(image: np.ndarray, filename: Union[Path, str]) -> None:
+    """Save an image.
+
+    Args:
+        image (np.ndarray): an image to save.
+        filename (Union[Path, str]): name to save the image as.
+    """
+    
+    cv2.imwrite(str(filename), image)
+
+def show_image(img: Union[np.ndarray, torch.Tensor], figsize = None, title = None, noframe = True) -> plt.Axes:
+    """Display an image from array or tensor.
+
+    Args:
+        img (Union[np.ndarray, torch.Tensor]): image in array or tensor form.
+        figsize (_type_, optional): size of the figure. Defaults to None.
+        title (_type_, optional): title of the figure. Defaults to None.
+        noframe (bool, optional): condition to frame the figure. Defaults to True.
+
+    Returns:
+        plt.Axes: an axes in which the image is plotted.
+    """
+    
+    if hasattrs(img, ("cpu", "detach", "permute")):
+        img = img.detach().cpu()
+        if len(img.shape) == 3 and img.shape[0] < 5:
+            img = img.permute(1, 2, 0)
+    elif not isinstance(img, np.ndarray):
+        img = np.array(img)
+    
+    if img.shape[-1] == 1:
+        img = img[..., 0]
+    
+    _, ax = plt.subplots(figsize = figsize)
+    
+    ax.imshow(img)
+    
+    if title is not None:
+        ax.set_title(title)
+        
+    ax.set_xticks([])
+    ax.set_yticks([])
+    
+    if noframe:
+        ax.axis("off")
+        
+    return ax
+
+def compute_sha256(filename: Union[Path, str]):
+    """Returns SHA256 checksum of a file."""
+    with open(filename, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
+
+class TqdmUpTo(tqdm):
+    
+    def update_to(self, blocks: int = 1, bsize: int = 1, tsize: int = None):
+        if tsize is not None:
+            self.total = tsize
+        self.update(blocks * bsize - self.n)
+    
+def download_url(url: str, filename: Union[Path, str]):
+    """Download a file from url to filename, with a progress bar."""
+
+    with TqdmUpTo(unit = "B", unit_scale = True, unit_divisor = 1024, miniters = 1) as t:
+        request.urlretrieve(url, filename, reporthook = t.update_to, data = None)
