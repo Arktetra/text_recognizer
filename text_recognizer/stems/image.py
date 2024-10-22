@@ -1,5 +1,6 @@
 import torch
 from torchvision.transforms import v2
+from torchvision import transforms
 
 class ImageStem:
     """
@@ -20,8 +21,8 @@ class ImageStem:
     """
     
     def __init__(self):
-        self.pil_transforms = v2.Compose([])
-        self.pil_to_tensor = v2.ToTensor()
+        self.pil_transforms = transforms.Compose([])
+        self.pil_to_tensor = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale = True)])
         self.torch_transforms = torch.nn.Sequential()
         
     def __call__(self, img):
