@@ -25,6 +25,10 @@ def hasattrs(obj: Any, attrs: Tuple[str]) -> bool:
        
     return all(hasattr(obj, attr) for attr in attrs)
 
+def to_categorical(y, num_classes):
+    """1-hot encode a tensor."""
+    return np.eye(num_classes, dtype = "uint8")[y]
+
 def read_image_pil(image_uri: Union[Path, str], grayscale = False) -> Image:
     """Read PIL Image from an uri.
 
