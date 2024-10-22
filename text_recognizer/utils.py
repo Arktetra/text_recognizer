@@ -3,7 +3,9 @@ from typing import Union, Tuple, Any
 from tqdm import tqdm
 from urllib import request
 
-import cv2
+from PIL import Image
+
+import contextlib
 import hashlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,43 +25,45 @@ def hasattrs(obj: Any, attrs: Tuple[str]) -> bool:
        
     return all(hasattr(obj, attr) for attr in attrs)
 
-def read_image(image_uri: Union[Path, str], grayscale: bool = False) -> np.array:
+def read_image_pil(image_uri: Union[Path, str], grayscale = False) -> Image:
+    """Read PIL Image from an uri.
+
+    Args:
+        image_uri (Union[Path, str]): an image uri.
+        grayscale (bool, optional): condition to grayscale the image. Defaults to False.
+
+    Returns:
+        Image: a PIL Image.
+    """
     
-    def read_image_from_filename(image_filename: Union[Path, str], imread_flag):
-        """Read an image from local file."""
+    def read_image_from_filename(image_filename: Union[Path, str], grayscale: bool) -> Image:
+        with Image.open(image_filename) as image:
+            if grayscale:
+                image = image.convert(model = "L")
+            else:
+                image = image.convert(mode = image.mode)
+            return image
         
-        return cv2.imread(image_filename, imread_flag)
-    
-    def read_image_from_url(image_url: str, imread_flag):
-        """Read an image from url."""
-        
+    def read_image_from_url(image_url: str, grayscale: bool) -> Image:
         url_response = request.urlopen(str(image_url))
-        image_array = np.array(bytearray(url_response.read()), dtype = np.uint8)
-        return cv2.imdecode(image_array, imread_flag)
+        # image_array = np.array(bytearray(url_response.read()), dtype = np.uint8)
+        return Image.open(url_response)
     
-    imread_flag = cv2.IMREAD_GRAYSCALE if grayscale else cv2.IMREAD_COLOR
     local_file = os.path.exists(image_uri)
     
     try:
         img = None
         if local_file:
-            img = read_image_from_filename(image_uri, imread_flag)
+            img = read_image_from_filename(image_uri, grayscale)
         else:
-            img = read_image_from_url(image_uri, imread_flag)
+            img = read_image_from_url(image_uri, grayscale)
     except Exception as e:
         raise ValueError("Could not load image at {}: {}".format(image_uri, e))
-    
+
     return img
-
-def write_image(image: np.ndarray, filename: Union[Path, str]) -> None:
-    """Save an image.
-
-    Args:
-        image (np.ndarray): an image to save.
-        filename (Union[Path, str]): name to save the image as.
-    """
-    
-    cv2.imwrite(str(filename), image)
+        
+def read_image(image_uri: Union[Path, str], grayscale = False) -> np.ndarray:
+    return read_image_pil(image_uri, grayscale)
 
 def show_image(img: Union[np.ndarray, torch.Tensor], figsize = None, title = None, noframe = True) -> plt.Axes:
     """Display an image from array or tensor.
@@ -98,6 +102,16 @@ def show_image(img: Union[np.ndarray, torch.Tensor], figsize = None, title = Non
         ax.axis("off")
         
     return ax
+
+@contextlib.contextmanager
+def temporary_working_directory(working_dir: Union[Path, str]):
+    """Temporarily switches to a directory, then returns to the original directory on exit."""
+    curr_dir = os.getcwd()
+    os.chdir(working_dir)
+    try:
+        yield
+    finally:
+        os.chdir(curr_dir)
 
 def compute_sha256(filename: Union[Path, str]):
     """Returns SHA256 checksum of a file."""
