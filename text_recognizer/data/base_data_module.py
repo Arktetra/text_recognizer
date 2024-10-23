@@ -6,8 +6,8 @@ from typing import Collection, Dict, Tuple, Optional
 import argparse
 import os
 import text_recognizer.metadata.shared as metadata
+import text_recognizer.utils as utils
 import torch
-import utils
 
 def load_and_print_info(data_module_class) -> None:
     parser = argparse.ArgumentParser()
