@@ -35,7 +35,8 @@ def _download_raw_dataset(metadata: Dict, dl_dirname: Path) -> Path:
     return filename
 
 BATCH_SIZE = 128
-NUM_AVAIL_CPUS = os.cpu_count()
+# NUM_AVAIL_CPUS = os.cpu_count()   try this is other os
+NUM_AVAIL_CPUS = 0
 NUM_AVAIL_GPUS = torch.cuda.device_count()
 
 DEFAULT_NUM_WORKERS = NUM_AVAIL_CPUS
