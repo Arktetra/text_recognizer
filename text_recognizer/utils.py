@@ -69,7 +69,7 @@ def read_image_pil(image_uri: Union[Path, str], grayscale = False) -> Image:
 def read_image(image_uri: Union[Path, str], grayscale = False) -> np.ndarray:
     return read_image_pil(image_uri, grayscale)
 
-def show_image(img: Union[np.ndarray, torch.Tensor], figsize = None, title = None, noframe = True) -> plt.Axes:
+def show_image(img: Union[np.ndarray, torch.Tensor], ax = None, figsize = None, title = None, noframe = True) -> plt.Axes:
     """Display an image from array or tensor.
 
     Args:
@@ -92,7 +92,8 @@ def show_image(img: Union[np.ndarray, torch.Tensor], figsize = None, title = Non
     if img.shape[-1] == 1:
         img = img[..., 0]
     
-    _, ax = plt.subplots(figsize = figsize)
+    if ax is  None:
+        _, ax = plt.subplots(figsize = figsize)
     
     ax.imshow(img)
     
@@ -106,6 +107,44 @@ def show_image(img: Union[np.ndarray, torch.Tensor], figsize = None, title = Non
         ax.axis("off")
         
     return ax
+
+def show_images(sample: Tuple[torch.Tensor, torch.Tensor], mapping = None, nrows = 1, ncols = 1, figsize = None):
+    """Display a grid of images from the sample.
+
+    Args:
+        sample (Tuple[torch.Tensor, torch.Tensor]): sample from which image is displayed.
+        mapping (_type_, optional): a mapping to actual labels. Defaults to None.
+        nrows (int, optional): number of rows in the grid. Defaults to 1.
+        ncols (int, optional): number of columns in the grid. Defaults to 1.
+        figsize (_type_, optional): size of the figure. Defaults to None.
+    """
+    imgs, labels = sample
+    
+    if len(imgs.shape) == 4 and imgs.shape[1] < 5:
+        imgs = imgs.permute(0, 2, 3, 1)
+        
+    if nrows == 1 and ncols == 1:
+        return show_image(imgs[0], title = mapping[labels[0]])
+    
+    fig, axes = plt.subplots(nrows = nrows, ncols = ncols, figsize = figsize)
+    
+    if nrows == 1 or ncols == 1:
+        for idx in range(nrows * ncols):
+            title = None
+            if mapping is not None:
+                title = mapping[labels[idx]]
+            axes[idx] = show_image(img = imgs[idx], ax = axes[idx], title = title)
+    else:
+        plt.subplots_adjust(hspace = 0.25, wspace = -0.5)
+        for row in range(nrows):
+            for col in range(ncols):
+                if (row * ncols + col) > (len(imgs) - 1):
+                    axes[row][col].axis("off")
+                    continue
+                title = None
+                if mapping is not None:
+                    title = mapping[labels[row * ncols + col]]
+                axes[row][col] = show_image(img = imgs[row * ncols + col], ax = axes[row][col], title = title)
 
 @contextlib.contextmanager
 def temporary_working_directory(working_dir: Union[Path, str]):
