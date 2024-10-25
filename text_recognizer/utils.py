@@ -108,7 +108,7 @@ def show_image(img: Union[np.ndarray, torch.Tensor], ax = None, figsize = None, 
         
     return ax
 
-def show_images(sample: Tuple[torch.Tensor, torch.Tensor], mapping = None, nrows = 1, ncols = 1, figsize = None):
+def show_images(sample: Union[Tuple[torch.Tensor, torch.Tensor], torch.Tensor], mapping = None, nrows = 1, ncols = 1, figsize = None):
     """Display a grid of images from the sample.
 
     Args:
@@ -117,14 +117,22 @@ def show_images(sample: Tuple[torch.Tensor, torch.Tensor], mapping = None, nrows
         nrows (int, optional): number of rows in the grid. Defaults to 1.
         ncols (int, optional): number of columns in the grid. Defaults to 1.
         figsize (_type_, optional): size of the figure. Defaults to None.
-    """
-    imgs, labels = sample
+    """    
+    if len(sample) == 2:
+        imgs, labels = sample
+    else:
+        imgs, labels = sample, None
     
     if len(imgs.shape) == 4 and imgs.shape[1] < 5:
         imgs = imgs.permute(0, 2, 3, 1)
         
     if nrows == 1 and ncols == 1:
-        return show_image(imgs[0], title = mapping[labels[0]])
+        title = None
+        if mapping is not None:
+            title = mapping[labels[0]]
+        elif labels is not None:
+            title = labels[0]
+        return show_image(imgs[0], title = title)
     
     fig, axes = plt.subplots(nrows = nrows, ncols = ncols, figsize = figsize)
     
@@ -133,6 +141,8 @@ def show_images(sample: Tuple[torch.Tensor, torch.Tensor], mapping = None, nrows
             title = None
             if mapping is not None:
                 title = mapping[labels[idx]]
+            elif labels is not None:
+                title = labels[idx]
             axes[idx] = show_image(img = imgs[idx], ax = axes[idx], title = title)
     else:
         plt.subplots_adjust(hspace = 0.25, wspace = -0.5)
@@ -144,6 +154,8 @@ def show_images(sample: Tuple[torch.Tensor, torch.Tensor], mapping = None, nrows
                 title = None
                 if mapping is not None:
                     title = mapping[labels[row * ncols + col]]
+                elif labels is not None:
+                    title = labels[row * ncols + col]
                 axes[row][col] = show_image(img = imgs[row * ncols + col], ax = axes[row][col], title = title)
 
 @contextlib.contextmanager
