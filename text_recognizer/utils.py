@@ -54,7 +54,7 @@ def read_image_pil(image_uri: Union[Path, str], grayscale = False) -> Image:
     def read_image_from_filename(image_filename: Union[Path, str], grayscale: bool) -> Image:
         with Image.open(image_filename) as image:
             if grayscale:
-                image = image.convert(model = "L")
+                image = image.convert(mode = "L")
             else:
                 image = image.convert(mode = image.mode)
             return image

@@ -173,7 +173,7 @@ def _get_ids_from_lwitlrt_split_file(filename: Path) -> List[str]:
 
 def _get_line_strings_from_xml_file(filename: Path) -> List[str]:
     """
-    Get the text content of each line. Note that &quot; is replaced with ".
+    Get the text content of each line. Note that `&quot;` is replaced with `"`.
     """
     xml_line_elements = _get_line_elements_from_xml_file(filename)
     return [_get_text_from_xml_element(el) for el in xml_line_elements]
