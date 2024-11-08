@@ -29,7 +29,7 @@ class IAM:
         filename = _download_raw_dataset(self.metadata, DL_DATA_DIRNAME)
         _extract_raw_dataset(filename, DL_DATA_DIRNAME)
         
-    def load_images(self, id: str):
+    def load_image(self, id: str):
         """
         Load and return an image of an entire IAM form.
         
@@ -144,7 +144,7 @@ class IAM:
         A dict mapping an IAM form id to its handwritten paragraph image crop region.
         """
         return {
-            id: {
+            id_: {
                 "x1": min(region["x1"] for region in line_regions),
                 "x2": max(region["x2"] for region in line_regions),
                 "y1": min(region["y1"] for region in line_regions),
@@ -215,7 +215,7 @@ def _get_line_regions_from_xml_file(filename: Path) -> Dict[str, int]:
             "x1": region["x1"] - metadata.LINE_REGION_PADDING,
             "x2": region["x2"] + metadata.LINE_REGION_PADDING,
             "y1": region["y1"] - min(metadata.LINE_REGION_PADDING, pre_line_gaps_y[i] // 2),
-            "y2": region["y2"] - min(metadata.LINE_REGION_PADDING, post_line_gaps_y[i] // 2)
+            "y2": region["y2"] + min(metadata.LINE_REGION_PADDING, post_line_gaps_y[i] // 2)
         }
         for i, region in enumerate(line_regions)
     ]
