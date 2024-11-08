@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Union, Tuple, Any
 from tqdm import tqdm
@@ -11,6 +12,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import torch
+
+def to_cpu(x):
+    if isinstance(x, Mapping):
+        return {k: to_cpu(v) for k, v in x}
+    if isinstance(x, list):
+        return [to_cpu(o) for o in x]
+    if isinstance(x, tuple):
+        return tuple(to_cpu(list(x)))
+    return x.detach().cpu()
+        
 
 def hasattrs(obj: Any, attrs: Tuple[str]) -> bool:
     """Checks if an object obj has all attribute in attrs.
